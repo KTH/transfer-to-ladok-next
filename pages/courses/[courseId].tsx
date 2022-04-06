@@ -10,7 +10,26 @@ const _getServerSideProps: GetServerSideProps = async (context) => {
     if (accessToken) {
       // TODO: More advanced check
       return {
-        props: {},
+        props: {
+          aktivitetstillfalle: [
+            {
+              name: "SF2743 TEN1: 2022-01-17",
+              id: "b00e392e-520c-11ec-a5bb-5f5e44dd4232",
+            },
+          ],
+          kurstillfalle: [
+            {
+              name: "SF2743 HT21-2",
+              modules: [
+                {
+                  id: "SF2743",
+                  code: "TEN1",
+                  name: "Examination",
+                },
+              ],
+            },
+          ],
+        },
       };
     }
   }
@@ -37,7 +56,15 @@ const Home: NextPage = () => {
       <main className={styles.main}>
         <h1 className={styles.title}>Welcome to Transfer to Ladok!</h1>
 
-        <div>Choose a which module do you want to grade</div>
+        <div>
+          <p>Choose what do you want to grade</p>
+          <h2>Examinations</h2>
+          <ul>
+            <li>SF2743 TEN1: 2022-01-17</li>
+          </ul>
+
+          <h2>Modules</h2>
+        </div>
       </main>
     </div>
   );
