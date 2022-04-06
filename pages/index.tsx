@@ -1,29 +1,6 @@
-import type { NextPage, GetServerSideProps } from "next";
+import type { NextPage } from "next";
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
-import { withSessionSsr } from "lib/withSession";
-
-const _getServerSideProps: GetServerSideProps = async (context) => {
-  if (context.req.session) {
-    const { accessToken } = context.req.session;
-
-    if (accessToken) {
-      // TODO: More advanced check
-      return {
-        props: {},
-      };
-    }
-  }
-
-  return {
-    redirect: {
-      destination: "/unauthenticated",
-      permanent: false,
-    },
-  };
-};
-
-export const getServerSideProps = withSessionSsr(_getServerSideProps);
 
 const Home: NextPage = () => {
   return (
@@ -37,7 +14,7 @@ const Home: NextPage = () => {
       <main className={styles.main}>
         <h1 className={styles.title}>Welcome to Transfer to Ladok!</h1>
 
-        <div>Choose a which module do you want to grade</div>
+        <div>Go to /transfer-to-ladok/:courseId to use the app!</div>
       </main>
     </div>
   );

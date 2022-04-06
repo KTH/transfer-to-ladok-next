@@ -45,7 +45,7 @@ async function oauthHandler(req: NextApiRequest, res: NextApiResponse) {
     const state = generators.state();
     const url = client.authorizationUrl({ state });
 
-    // req.session.temporalCourseId
+    req.session.temporalCourseId = req.query.courseId as string;
     req.session.temporalState = state;
     await req.session.save();
 
@@ -62,12 +62,15 @@ async function oauthHandler(req: NextApiRequest, res: NextApiResponse) {
     assert(tokenSet.access_token, "No access token!?");
     assert(tokenSet.refresh_token, "No refresh token!?");
 
+    const courseId = req.session.temporalCourseId;
+
     req.session.temporalState = "";
+    req.session.temporalCourseId = "";
     req.session.userId = tokenSet.user.id;
     req.session.accessToken = tokenSet.access_token;
     req.session.refreshToken = tokenSet.refresh_token;
     await req.session.save();
 
-    res.redirect("/transfer-to-ladok");
+    res.redirect(`/transfer-to-ladok/${courseId}`);
   }
 }

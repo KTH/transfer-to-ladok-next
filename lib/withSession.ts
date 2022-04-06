@@ -32,6 +32,7 @@ export function withSessionSsr<
 declare module "iron-session" {
   interface IronSessionData {
     temporalState: string;
+    temporalCourseId: string;
     userId: number;
     accessToken: string;
     refreshToken: string;
