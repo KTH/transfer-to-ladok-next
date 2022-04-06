@@ -10,10 +10,9 @@
   },
   "dependencies": {
     "@kth/canvas-api": "^4.2.0",
-    "@next-auth/mongodb-adapter": "^1.0.3",
-    "mongodb": "^4.5.0",
+    "iron-session": "^6.1.2",
     "next": "12.1.4",
-    "next-auth": "^4.3.1",
+    "openid-client": "^5.1.4",
     "react": "18.0.0",
     "react-dom": "18.0.0"
   },

@@ -1,27 +1,29 @@
 import type { NextPage, GetServerSideProps } from "next";
-import { useRouter } from "next/router";
-import { signIn, getSession } from "next-auth/react";
 import Head from "next/head";
-import Image from "next/image";
 import styles from "../styles/Home.module.css";
-import Link from "next/link";
+import { withSessionSsr } from "lib/withSession";
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const session = await getSession(context);
+const _getServerSideProps: GetServerSideProps = async (context) => {
+  if (context.req.session) {
+    const { accessToken } = context.req.session;
 
-  if (session) {
-    return {
-      redirect: {
-        destination: "/app",
-        permanent: false,
-      },
-    };
+    if (accessToken) {
+      // TODO: More advanced check
+      return {
+        props: {},
+      };
+    }
   }
 
   return {
-    props: {},
+    redirect: {
+      destination: "/unauthenticated",
+      permanent: false,
+    },
   };
 };
+
+export const getServerSideProps = withSessionSsr(_getServerSideProps);
 
 const Home: NextPage = () => {
   return (
@@ -33,34 +35,10 @@ const Home: NextPage = () => {
       </Head>
 
       <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+        <h1 className={styles.title}>Welcome to Transfer to Ladok!</h1>
 
-        <p className={styles.description}>
-          Get started by editing{" "}
-          <code className={styles.code}>pages/index.tsx</code>
-        </p>
-
-        <div className={styles.grid}>
-          <div className={styles.card}>
-            <button onClick={() => signIn("canvas")}>Authorize</button>
-          </div>
-        </div>
+        <div>Choose a which module do you want to grade</div>
       </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{" "}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
-      </footer>
     </div>
   );
 };

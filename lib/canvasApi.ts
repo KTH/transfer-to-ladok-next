@@ -1,4 +1,5 @@
-import Canvas from "@kth/canvas-api";
+import Canvas, { minimalErrorHandler } from "@kth/canvas-api";
+import { NextApiRequest } from "next";
 
 export interface Section {
   sis_section_id: string;
@@ -33,11 +34,12 @@ export interface Enrollment {
   };
 }
 
-export default class CanvasAPI {
+class CanvasAPI {
   client: Canvas;
 
   constructor(token: string) {
     this.client = new Canvas(process.env.CANVAS_API_URL, token);
+    this.client.errorHandler = minimalErrorHandler;
   }
 
   getCanvasSections(courseId: string) {
@@ -57,4 +59,12 @@ export default class CanvasAPI {
   getFinalGrades(courseId: string) {
     return this.client.listItems<Enrollment>(`courses/${courseId}/enrollments`);
   }
+}
+
+export async function getCanvasClient(req: NextApiRequest) {
+  if (req.session?.accessToken) {
+    return new CanvasAPI(req.session.accessToken);
+  }
+
+  return null;
 }

@@ -1,16 +1,22 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getSession } from "next-auth/react";
+import { getCanvasClient } from "lib/canvasApi";
+import { withSessionRoute } from "lib/withSession";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const token = await getSession({ req });
-  console.log(JSON.stringify(token));
+export default withSessionRoute(sectionsHandler);
 
-  if (!token?.sub) {
+async function sectionsHandler(req: NextApiRequest, res: NextApiResponse) {
+  const canvas = await getCanvasClient(req);
+
+  if (!canvas) {
     res.status(401).json({ message: "unauthorized" });
     return;
+  }
+
+  try {
+    const sections = await canvas.getCanvasSections("1").toArray();
+    console.log(sections);
+  } catch (err) {
+    console.error(err);
   }
 
   res.status(200).json({
