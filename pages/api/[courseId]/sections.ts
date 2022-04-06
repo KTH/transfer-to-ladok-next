@@ -1,6 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getToken } from "next-auth/jwt";
-import CanvasAPI from "lib/canvasApi";
 import { getSession } from "next-auth/react";
 
 export default async function handler(
