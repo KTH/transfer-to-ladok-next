@@ -3,27 +3,45 @@ import Head from "next/head";
 import styles from "../../styles/Home.module.css";
 import { withSessionSsr } from "lib/withSession";
 
-const _getServerSideProps: GetServerSideProps = async (context) => {
+interface HomeProps {
+  aktivitetstillfalle: {
+    id: string;
+    name: string;
+  }[];
+  kurstillfalle: {
+    id: string;
+    name: string;
+    modules: {
+      id: string;
+      examCode: string;
+      name: string;
+    }[];
+  }[];
+}
+
+const _getServerSideProps: GetServerSideProps<HomeProps> = async (context) => {
   if (context.req.session) {
     const { accessToken } = context.req.session;
 
     if (accessToken) {
       // TODO: More advanced check
+      // TODO: replace this array with actual API calls to Canvas, Ladok, Kopps, etc.
       return {
         props: {
           aktivitetstillfalle: [
             {
-              name: "SF2743 TEN1: 2022-01-17",
               id: "b00e392e-520c-11ec-a5bb-5f5e44dd4232",
+              name: "SF2743 TEN1: 2022-01-17",
             },
           ],
           kurstillfalle: [
             {
+              id: "",
               name: "SF2743 HT21-2",
               modules: [
                 {
-                  id: "SF2743",
-                  code: "TEN1",
+                  id: "80eac5ed-73d8-11e8-b4e0-063f9afb40e3",
+                  examCode: "TEN1",
                   name: "Examination",
                 },
               ],
@@ -42,9 +60,9 @@ const _getServerSideProps: GetServerSideProps = async (context) => {
   };
 };
 
-export const getServerSideProps = withSessionSsr(_getServerSideProps);
+export const getServerSideProps = withSessionSsr<{}>(_getServerSideProps);
 
-const Home: NextPage = () => {
+const Home: NextPage<HomeProps> = ({ aktivitetstillfalle, kurstillfalle }) => {
   return (
     <div className={styles.container}>
       <Head>
@@ -58,12 +76,33 @@ const Home: NextPage = () => {
 
         <div>
           <p>Choose what do you want to grade</p>
-          <h2>Examinations</h2>
-          <ul>
-            <li>SF2743 TEN1: 2022-01-17</li>
-          </ul>
-
-          <h2>Modules</h2>
+          {aktivitetstillfalle.length > 0 && (
+            <div>
+              <h2>Examinations</h2>
+              <ul>
+                {aktivitetstillfalle.map((akt) => (
+                  <li key={akt.id}>SF2743 TEN1: 2022-01-17</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {kurstillfalle.length > 0 && (
+            <div>
+              <h2>Modules</h2>
+              {kurstillfalle.map((ktf) => (
+                <div key={ktf.id}>
+                  <h3 key={ktf.id}>{ktf.name}</h3>
+                  <ul>
+                    {ktf.modules.map((m) => (
+                      <li key={m.id}>
+                        {m.examCode} {m.name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
