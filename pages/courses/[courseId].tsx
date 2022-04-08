@@ -8,6 +8,8 @@ import {
   getModulesInKurstillfalle,
 } from "lib/ladokApi";
 import { CanvasApiError } from "@kth/canvas-api";
+import Link from "next/link";
+import { useRouter } from "next/router";
 
 interface HomeProps {
   aktivitetstillfalle: {
@@ -129,6 +131,9 @@ const _getServerSideProps: GetServerSideProps<HomeProps> = async (context) => {
 export const getServerSideProps = withSessionSsr<{}>(_getServerSideProps);
 
 const Home: NextPage<HomeProps> = ({ aktivitetstillfalle, kurstillfalle }) => {
+  const router = useRouter();
+  const courseId = router.query.courseId as string;
+
   return (
     <div className={styles.container}>
       <Head>
@@ -147,7 +152,13 @@ const Home: NextPage<HomeProps> = ({ aktivitetstillfalle, kurstillfalle }) => {
               <h2>Examinations</h2>
               <ul>
                 {aktivitetstillfalle.map((akt) => (
-                  <li key={akt.id}>SF2743 TEN1: 2022-01-17</li>
+                  <li key={akt.id}>
+                    <Link
+                      href={`/courses/${courseId}/gradebook?aktivitetstillfalle=${akt.id}`}
+                    >
+                      <a>{akt.name}</a>
+                    </Link>
+                  </li>
                 ))}
               </ul>
             </div>
