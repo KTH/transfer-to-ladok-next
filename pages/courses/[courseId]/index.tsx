@@ -1,6 +1,6 @@
 import type { NextPage, GetServerSideProps } from "next";
 import Head from "next/head";
-import styles from "../../styles/Home.module.css";
+import styles from "../../../styles/Home.module.css";
 import { withSessionSsr } from "lib/withSession";
 import CanvasAPI, { Section } from "lib/canvasApi";
 import {
