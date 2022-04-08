@@ -34,7 +34,7 @@ export interface Enrollment {
   };
 }
 
-class CanvasAPI {
+export default class CanvasAPI {
   client: Canvas;
 
   constructor(token: string) {
@@ -43,7 +43,9 @@ class CanvasAPI {
   }
 
   getCanvasSections(courseId: string) {
-    return this.client.listItems<Section>(`courses/${courseId}/sections`);
+    return this.client
+      .listItems<Section>(`courses/${courseId}/sections`)
+      .toArray();
   }
 
   getAssignments(courseId: string) {
@@ -59,12 +61,4 @@ class CanvasAPI {
   getFinalGrades(courseId: string) {
     return this.client.listItems<Enrollment>(`courses/${courseId}/enrollments`);
   }
-}
-
-export async function getCanvasClient(req: NextApiRequest) {
-  if (req.session?.accessToken) {
-    return new CanvasAPI(req.session.accessToken);
-  }
-
-  return null;
 }

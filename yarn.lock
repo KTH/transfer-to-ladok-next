@@ -1079,7 +1079,7 @@
     "merge2" "^1.4.1"
     "slash" "^3.0.0"
 
-"got@^11.8.2":
+"got@^11.8.2", "got@^11.8.3":
   "integrity" "sha512-7gtQ5KiPh1RtGS9/Jbv1ofDpBFuq42gyfEib+ejaRBJuj/3tQFeR5+gw57e4ipaU8c/rCjvX6fkQz2lyDlGAOg=="
   "resolved" "https://registry.npmjs.org/got/-/got-11.8.3.tgz"
   "version" "11.8.3"

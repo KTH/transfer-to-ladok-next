@@ -2,6 +2,12 @@ import type { NextPage, GetServerSideProps } from "next";
 import Head from "next/head";
 import styles from "../../styles/Home.module.css";
 import { withSessionSsr } from "lib/withSession";
+import CanvasAPI, { Section } from "lib/canvasApi";
+import {
+  getAktivitetstillfalle,
+  getModulesInKurstillfalle,
+} from "lib/ladokApi";
+import { CanvasApiError } from "@kth/canvas-api";
 
 interface HomeProps {
   aktivitetstillfalle: {
@@ -19,36 +25,96 @@ interface HomeProps {
   }[];
 }
 
-const _getServerSideProps: GetServerSideProps<HomeProps> = async (context) => {
-  if (context.req.session) {
-    const { accessToken } = context.req.session;
+/**
+ * Given a list of Canvas sections, returns a list of unique
+ * aktivitetstillfalleUID
+ */
+function getUniqueAktivitetstillfalle(sections: Section[]) {
+  const AKTIVITETSTILLFALLE_REGEX = /^AKT\.([a-z0-9-]+)(\.FUNKA)?$/;
 
-    if (accessToken) {
-      // TODO: More advanced check
-      // TODO: replace this array with actual API calls to Canvas, Ladok, Kopps, etc.
-      return {
-        props: {
-          aktivitetstillfalle: [
-            {
-              id: "b00e392e-520c-11ec-a5bb-5f5e44dd4232",
-              name: "SF2743 TEN1: 2022-01-17",
-            },
-          ],
-          kurstillfalle: [
-            {
-              id: "",
-              name: "SF2743 HT21-2",
-              modules: [
-                {
-                  id: "80eac5ed-73d8-11e8-b4e0-063f9afb40e3",
-                  examCode: "TEN1",
-                  name: "Examination",
-                },
-              ],
-            },
-          ],
-        },
-      };
+  const ids = sections
+    .map((s) => AKTIVITETSTILLFALLE_REGEX.exec(s.sis_section_id)?.[1])
+    .filter((id): id is string => id !== undefined);
+
+  // Remove duplicates
+  return Array.from(new Set(ids));
+}
+
+function isKurstillfalle(section: Section) {
+  const KURSTILLFALLE_REGEX = /^\w{6,7}[HT|VT]\d\d$/;
+
+  return KURSTILLFALLE_REGEX.test(section.sis_section_id);
+}
+
+async function completeAktivitetstillfalleInformation(
+  aktivitestillfalleUID: string
+) {
+  const ladokAkt = await getAktivitetstillfalle(aktivitestillfalleUID);
+  const codes = ladokAkt.Aktiviteter.map(
+    (a) =>
+      `${a.Kursinstans.Utbildningskod} ${a.Utbildningsinstans.Utbildningskod}`
+  );
+  const date = ladokAkt.Datumperiod.Startdatum;
+
+  return {
+    id: aktivitestillfalleUID,
+    name: `${codes} ${date}`,
+  };
+}
+
+async function completeKurstillfalleInformation(section: Section) {
+  const ktf = await getModulesInKurstillfalle(section.integration_id);
+
+  return {
+    id: ktf.UtbildningsinstansUID,
+    name: section.sis_section_id,
+    modules: ktf.IngaendeMoment.map((m) => ({
+      id: m.UtbildningsinstansUID,
+      examCode: m.Utbidlningskod,
+      name: m.Benamning.en,
+    })),
+  };
+}
+
+const _getServerSideProps: GetServerSideProps<HomeProps> = async (context) => {
+  try {
+    if (context.req.session) {
+      const { accessToken } = context.req.session;
+
+      if (accessToken) {
+        const canvas = new CanvasAPI(accessToken);
+        const allSections = await canvas.getCanvasSections(
+          context.query.courseId as string
+        );
+
+        const aktivitetstillfalle = await Promise.all(
+          getUniqueAktivitetstillfalle(allSections).map(
+            completeAktivitetstillfalleInformation
+          )
+        );
+
+        const kurstillfalle = await Promise.all(
+          allSections
+            .filter(isKurstillfalle)
+            .map(completeKurstillfalleInformation)
+        );
+
+        return {
+          props: {
+            aktivitetstillfalle,
+            kurstillfalle,
+          },
+        };
+      }
+    }
+  } catch (err) {
+    if (err instanceof CanvasApiError) {
+      if (err.code !== 401) {
+        throw err;
+      }
+    } else {
+      console.error(err);
+      throw err;
     }
   }
 
