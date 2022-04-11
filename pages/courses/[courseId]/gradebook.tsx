@@ -99,6 +99,7 @@ function useStudents(params: Params) {
     throw new Error("[params.type] should be aktivitetstillfalle");
   });
 }
+
 interface GradebookProps {
   assignments: {
     id: string;
@@ -110,7 +111,7 @@ interface GradebookProps {
 const _getServerSideProps: GetServerSideProps<GradebookProps> = async (
   context
 ) => {
-  const canvas = await getCanvasClient(context);
+  const canvas = await getCanvasClient(context.req);
 
   if (!canvas) {
     return redirectUnauthenticated(context);

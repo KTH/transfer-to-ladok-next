@@ -90,7 +90,7 @@ async function completeKurstillfalleInformation(section: Section) {
 }
 
 const _getServerSideProps: GetServerSideProps<HomeProps> = async (context) => {
-  const canvas = await getCanvasClient(context);
+  const canvas = await getCanvasClient(context.req);
   if (!canvas) {
     return redirectUnauthenticated(context);
   }

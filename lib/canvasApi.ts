@@ -1,4 +1,5 @@
 import Canvas, { CanvasApiError, minimalErrorHandler } from "@kth/canvas-api";
+import { IronSession } from "iron-session";
 import { GetServerSidePropsContext, NextApiRequest } from "next";
 
 export interface Section {
@@ -72,12 +73,12 @@ export default class CanvasAPI {
   }
 }
 
-export async function getCanvasClient(context: GetServerSidePropsContext) {
-  if (!context.req.session) {
+export async function getCanvasClient(req: { session: IronSession }) {
+  if (!req.session) {
     return null;
   }
 
-  const { accessToken } = context.req.session;
+  const { accessToken } = req.session;
 
   if (!accessToken) {
     return null;
