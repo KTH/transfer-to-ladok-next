@@ -7,7 +7,7 @@ import Link from "next/link";
 
 const Home: NextPage = () => {
   const router = useRouter();
-  const courseId = router.query.courseId as string;
+  const returnUrl = router.query.returnUrl as string;
 
   return (
     <div className={styles.container}>
@@ -26,7 +26,7 @@ const Home: NextPage = () => {
           </small>
         </p>
 
-        <Link href={`/api/auth?courseId=${courseId}`}>
+        <Link href={`/api/auth?returnUrl=${returnUrl}`}>
           <a className={styles.card}>Authorize &rarr;</a>
         </Link>
       </main>

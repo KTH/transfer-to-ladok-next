@@ -1,8 +1,17 @@
-import type { NextPage, GetServerSideProps } from "next";
+import type {
+  NextPage,
+  GetServerSideProps,
+  GetServerSidePropsContext,
+  GetServerSidePropsResult,
+} from "next";
 import Head from "next/head";
 import styles from "../../../styles/Home.module.css";
 import { withSessionSsr } from "lib/withSession";
-import CanvasAPI, { Section } from "lib/canvasApi";
+import CanvasAPI, {
+  getCanvasClient,
+  redirectUnauthenticated,
+  Section,
+} from "lib/canvasApi";
 import {
   getAktivitetstillfalle,
   getModulesInKurstillfalle,
@@ -81,51 +90,29 @@ async function completeKurstillfalleInformation(section: Section) {
 }
 
 const _getServerSideProps: GetServerSideProps<HomeProps> = async (context) => {
-  try {
-    if (context.req.session) {
-      const { accessToken } = context.req.session;
-
-      if (accessToken) {
-        const canvas = new CanvasAPI(accessToken);
-        const allSections = await canvas.getCanvasSections(
-          context.query.courseId as string
-        );
-
-        const aktivitetstillfalle = await Promise.all(
-          getUniqueAktivitetstillfalle(allSections).map(
-            completeAktivitetstillfalleInformation
-          )
-        );
-
-        const kurstillfalle = await Promise.all(
-          allSections
-            .filter(isKurstillfalle)
-            .map(completeKurstillfalleInformation)
-        );
-
-        return {
-          props: {
-            aktivitetstillfalle,
-            kurstillfalle,
-          },
-        };
-      }
-    }
-  } catch (err) {
-    if (err instanceof CanvasApiError) {
-      if (err.code !== 401) {
-        throw err;
-      }
-    } else {
-      console.error(err);
-      throw err;
-    }
+  const canvas = await getCanvasClient(context);
+  if (!canvas) {
+    return redirectUnauthenticated(context);
   }
 
+  const allSections = await canvas.getCanvasSections(
+    context.query.courseId as string
+  );
+
+  const aktivitetstillfalle = await Promise.all(
+    getUniqueAktivitetstillfalle(allSections).map(
+      completeAktivitetstillfalleInformation
+    )
+  );
+
+  const kurstillfalle = await Promise.all(
+    allSections.filter(isKurstillfalle).map(completeKurstillfalleInformation)
+  );
+
   return {
-    redirect: {
-      destination: `/unauthenticated?courseId=${context.query.courseId}`,
-      permanent: false,
+    props: {
+      aktivitetstillfalle,
+      kurstillfalle,
     },
   };
 };

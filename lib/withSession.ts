@@ -29,10 +29,12 @@ export function withSessionSsr<
   return withIronSessionSsr(handler, sessionOptions);
 }
 
+function x() {}
+
 declare module "iron-session" {
   interface IronSessionData {
     temporalState: string;
-    temporalCourseId: string;
+    temporalReturnUrl: string;
     userId: number;
     accessToken: string;
     refreshToken: string;

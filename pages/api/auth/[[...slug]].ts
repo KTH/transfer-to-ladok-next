@@ -1,8 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Issuer, generators, TokenSet } from "openid-client";
+import { Issuer, generators } from "openid-client";
 import { URL } from "url";
 import { withSessionRoute } from "lib/withSession";
-import { withIronSessionApiRoute } from "iron-session/next";
 import assert from "assert";
 
 declare module "openid-client" {
@@ -45,7 +44,7 @@ async function oauthHandler(req: NextApiRequest, res: NextApiResponse) {
     const state = generators.state();
     const url = client.authorizationUrl({ state });
 
-    req.session.temporalCourseId = req.query.courseId as string;
+    req.session.temporalReturnUrl = req.query.returnUrl as string;
     req.session.temporalState = state;
     await req.session.save();
 
@@ -62,15 +61,15 @@ async function oauthHandler(req: NextApiRequest, res: NextApiResponse) {
     assert(tokenSet.access_token, "No access token!?");
     assert(tokenSet.refresh_token, "No refresh token!?");
 
-    const courseId = req.session.temporalCourseId;
+    const returnUrl = req.session.temporalReturnUrl;
 
     req.session.temporalState = "";
-    req.session.temporalCourseId = "";
+    req.session.temporalReturnUrl = "";
     req.session.userId = tokenSet.user.id;
     req.session.accessToken = tokenSet.access_token;
     req.session.refreshToken = tokenSet.refresh_token;
     await req.session.save();
 
-    res.redirect(`/transfer-to-ladok/courses/${courseId}`);
+    res.redirect(`/transfer-to-ladok/${returnUrl}`);
   }
 }

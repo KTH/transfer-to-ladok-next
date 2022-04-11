@@ -1,5 +1,5 @@
-import Canvas, { minimalErrorHandler } from "@kth/canvas-api";
-import { NextApiRequest } from "next";
+import Canvas, { CanvasApiError, minimalErrorHandler } from "@kth/canvas-api";
+import { GetServerSidePropsContext, NextApiRequest } from "next";
 
 export interface Section {
   sis_section_id: string;
@@ -46,6 +46,10 @@ export default class CanvasAPI {
     this.client.errorHandler = minimalErrorHandler;
   }
 
+  getSelf() {
+    return this.client.get("users/self");
+  }
+
   getCanvasSections(courseId: string) {
     return this.client
       .listItems<Section>(`courses/${courseId}/sections`)
@@ -66,4 +70,39 @@ export default class CanvasAPI {
   getFinalGrades(courseId: string) {
     return this.client.listItems<Enrollment>(`courses/${courseId}/enrollments`);
   }
+}
+
+export async function getCanvasClient(context: GetServerSidePropsContext) {
+  if (!context.req.session) {
+    return null;
+  }
+
+  const { accessToken } = context.req.session;
+
+  if (!accessToken) {
+    return null;
+  }
+
+  const canvas = new CanvasAPI(accessToken);
+
+  try {
+    await canvas.getSelf();
+
+    return canvas;
+  } catch (err) {
+    if (err instanceof CanvasApiError && err.code === 401) {
+      return null;
+    }
+
+    throw err;
+  }
+}
+
+export function redirectUnauthenticated(context: GetServerSidePropsContext) {
+  return {
+    redirect: {
+      destination: `/unauthenticated?returnUrl=${context.resolvedUrl}`,
+      permanent: false,
+    },
+  };
 }
