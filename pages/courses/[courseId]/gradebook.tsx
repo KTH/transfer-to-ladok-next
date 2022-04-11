@@ -3,7 +3,7 @@ import { withSessionSsr } from "lib/withSession";
 import CanvasAPI from "lib/canvasApi";
 import { CanvasApiError } from "@kth/canvas-api";
 import { useRouter } from "next/router";
-import { useQueryClient, useQuery } from "react-query";
+import { useQuery } from "react-query";
 import { StudieResultat } from "pages/api/aktivitetstillfalle/[aktId]/students";
 import { useState } from "react";
 
@@ -50,6 +50,30 @@ function useQueryParams(): Params {
   throw new Error(
     `Require either [aktivitetstillfalle] or [kurstillfalle] query parameters`
   );
+}
+
+async function fetchStudentsByAktivitetstillfalle(
+  aktivitetstillfalleUID: string
+): Promise<StudieResultat[]> {
+  const response = await fetch(
+    `/transfer-to-ladok/api/aktivitetstillfalle/${aktivitetstillfalleUID}/students`
+  );
+
+  if (!response.ok) {
+    throw new Error("Network response was not ok");
+  }
+
+  return response.json();
+}
+
+function useStudents(params: Params) {
+  return useQuery(["students"], () => {
+    if (params.type === "aktivitetstillfalle") {
+      return fetchStudentsByAktivitetstillfalle(params.aktivitetstillfalle);
+    }
+
+    throw new Error("[params.type] should be aktivitetstillfalle");
+  });
 }
 
 interface GradebookProps {
@@ -106,7 +130,6 @@ const _getServerSideProps: GetServerSideProps<GradebookProps> = async (
 export const getServerSideProps = withSessionSsr<{}>(_getServerSideProps);
 
 const Gradebook: NextPage<GradebookProps> = ({ assignments }) => {
-  const router = useRouter();
   const params = useQueryParams();
   const studentsQuery = useStudents(params);
   const [assignmentId, setAssignmentId] = useState("0");
