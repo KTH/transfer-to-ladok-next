@@ -5,6 +5,11 @@ import {
 import { withSessionRoute } from "lib/withSession";
 import { NextApiRequest, NextApiResponse } from "next";
 
+interface StudieResultat {
+  id: string;
+  stduieResultatUid: string;
+}
+
 export default async function studentsHandler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -12,6 +17,8 @@ export default async function studentsHandler(
   // TODO: check if the session has permissions to get this information
   const akt = req.query.aktId as string;
   const ktf = await getKurstillfalleInAktivitetstillfalle(akt);
+
+  // TODO: Must this be paginated??
   const students = await getStudentsInAktivitetstillfalle(
     akt,
     ktf.Utbildningstillfalle.map((u) => u.Uid)
