@@ -71,6 +71,6 @@ async function oauthHandler(req: NextApiRequest, res: NextApiResponse) {
     req.session.refreshToken = tokenSet.refresh_token;
     await req.session.save();
 
-    res.redirect(`/transfer-to-ladok/${courseId}`);
+    res.redirect(`/transfer-to-ladok/courses/${courseId}`);
   }
 }

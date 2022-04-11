@@ -23,6 +23,10 @@ export interface Submission {
   score: number | null;
   graded_at: string | null;
   submitted_at: string | null;
+  user: {
+    sortable_name: string;
+    integration_id: string;
+  };
 }
 
 export interface Enrollment {
@@ -54,7 +58,8 @@ export default class CanvasAPI {
 
   getSubmissions(courseId: string, assignmentId: string) {
     return this.client.listItems<Submission>(
-      `courses/${courseId}/assignments/${assignmentId}/submissions`
+      `courses/${courseId}/assignments/${assignmentId}/submissions`,
+      { include: "user" }
     );
   }
 

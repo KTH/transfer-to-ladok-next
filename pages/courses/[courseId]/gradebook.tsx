@@ -5,6 +5,7 @@ import { CanvasApiError } from "@kth/canvas-api";
 import { useRouter } from "next/router";
 import { useQueryClient, useQuery } from "react-query";
 import { StudieResultat } from "pages/api/aktivitetstillfalle/[aktId]/students";
+import { useState } from "react";
 
 // Endpoint /courses/:courseId/gradebook
 // Query parameters. Must be one of them:
@@ -51,25 +52,9 @@ function useQueryParams(): Params {
   );
 }
 
-function useStudents(params: Params) {
-  return useQuery<StudieResultat[], Error>(["students"], async () => {
-    if (params.type === "aktivitetstillfalle") {
-      const response = await fetch(
-        `/transfer-to-ladok/api/aktivitetstillfalle/${params.aktivitetstillfalle}/students`
-      );
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      return response.json();
-    }
-  });
-}
-
 interface GradebookProps {
   assignments: {
-    id: number;
+    id: string;
     name: string;
     type: "letter_grade" | "gpa_scale" | "points";
   }[];
@@ -91,7 +76,7 @@ const _getServerSideProps: GetServerSideProps<GradebookProps> = async (
         return {
           props: {
             assignments: assignments.map((a) => ({
-              id: a.id,
+              id: a.id.toString(10),
               name: a.name,
               type: a.grading_type,
             })),
@@ -124,14 +109,16 @@ const Gradebook: NextPage<GradebookProps> = ({ assignments }) => {
   const router = useRouter();
   const params = useQueryParams();
   const studentsQuery = useStudents(params);
+  const [assignmentId, setAssignmentId] = useState("0");
 
   return (
     <div>
       <header>
         <h2>Choose an assignment</h2>
-        <select name="" id="">
+        <select onChange={(e) => setAssignmentId(e.target.value)}>
+          <option value={0}>Select</option>
           {assignments.map((a) => (
-            <option key={a.id} value={a.id}>
+            <option key={a.id} value={a.id} selected={assignmentId === a.id}>
               {a.name} {a.type}
             </option>
           ))}
