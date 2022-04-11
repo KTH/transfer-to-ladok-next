@@ -29,8 +29,6 @@ export function withSessionSsr<
   return withIronSessionSsr(handler, sessionOptions);
 }
 
-function x() {}
-
 declare module "iron-session" {
   interface IronSessionData {
     temporalState: string;
