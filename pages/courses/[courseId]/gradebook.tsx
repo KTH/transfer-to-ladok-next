@@ -3,14 +3,20 @@ import { withSessionSsr } from "lib/withSession";
 import CanvasAPI from "lib/canvasApi";
 import { CanvasApiError } from "@kth/canvas-api";
 import { useRouter } from "next/router";
+import { useQueryClient, useQuery } from "react-query";
+import { StudieResultat } from "pages/api/aktivitetstillfalle/[aktId]/students";
 
 // Endpoint /courses/:courseId/gradebook
 // Query parameters. Must be one of them:
 // ?aktivitetstillfalle  - Ladok UID for aktivitetstillfalle
 // ?kurstillfalle        - Ladok UID for kurstillfalle
 
+type Params =
+  | { type: "aktivitetstillfalle"; aktivitetstillfalle: string }
+  | { type: "kurstillfalle"; kurstillfalle: string };
+
 /** Get the query parameters if correctly formated */
-function useQueryParams() {
+function useQueryParams(): Params {
   const router = useRouter();
   const aktivitetstillfalle = router.query.aktivitetstillfalle;
   const kurstillfalle = router.query.kurstillfalle;
@@ -24,7 +30,7 @@ function useQueryParams() {
 
   if (aktivitetstillfalle) {
     if (typeof aktivitetstillfalle === "string") {
-      return { aktivitetstillfalle };
+      return { type: "aktivitetstillfalle", aktivitetstillfalle };
     } else {
       throw new Error(
         `Query parameter [aktivitetstillfalle] should be a string. Given type [${typeof aktivitetstillfalle}]`
@@ -32,7 +38,7 @@ function useQueryParams() {
     }
   } else if (kurstillfalle) {
     if (typeof kurstillfalle === "string") {
-      return { kurstillfalle };
+      return { type: "kurstillfalle", kurstillfalle };
     } else {
       throw new Error(
         `Query parameter [kurstillfalle] should be a string. Given type [${typeof kurstillfalle}]`
@@ -43,6 +49,22 @@ function useQueryParams() {
   throw new Error(
     `Require either [aktivitetstillfalle] or [kurstillfalle] query parameters`
   );
+}
+
+function useStudents(params: Params) {
+  return useQuery<StudieResultat[], Error>(["students"], async () => {
+    if (params.type === "aktivitetstillfalle") {
+      const response = await fetch(
+        `/transfer-to-ladok/api/aktivitetstillfalle/${params.aktivitetstillfalle}/students`
+      );
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      return response.json();
+    }
+  });
 }
 
 interface GradebookProps {
@@ -100,7 +122,8 @@ export const getServerSideProps = withSessionSsr<{}>(_getServerSideProps);
 
 const Gradebook: NextPage<GradebookProps> = ({ assignments }) => {
   const router = useRouter();
-  const { aktivitetstillfalle, kurstillfalle } = useQueryParams();
+  const params = useQueryParams();
+  const studentsQuery = useStudents(params);
 
   return (
     <div>
@@ -116,6 +139,7 @@ const Gradebook: NextPage<GradebookProps> = ({ assignments }) => {
         <h2>Choose an option for examination date</h2>
       </header>
       <main>Here you can see students!</main>
+      {studentsQuery.isFetched ? "Available!" : "Loading!"}
     </div>
   );
 };

@@ -5,7 +5,7 @@ import {
 import { withSessionRoute } from "lib/withSession";
 import { NextApiRequest, NextApiResponse } from "next";
 
-interface StudieResultat {
+export interface StudieResultat {
   id: string;
   stduieResultatUid: string;
 }
