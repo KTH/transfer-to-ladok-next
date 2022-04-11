@@ -101,7 +101,9 @@ export async function getCanvasClient(context: GetServerSidePropsContext) {
 export function redirectUnauthenticated(context: GetServerSidePropsContext) {
   return {
     redirect: {
-      destination: `/unauthenticated?returnUrl=${context.resolvedUrl}`,
+      destination: `/unauthenticated?returnUrl=${encodeURIComponent(
+        context.resolvedUrl
+      )}`,
       permanent: false,
     },
   };

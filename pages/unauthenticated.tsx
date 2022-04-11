@@ -26,7 +26,7 @@ const Home: NextPage = () => {
           </small>
         </p>
 
-        <Link href={`/api/auth?returnUrl=${returnUrl}`}>
+        <Link href={`/api/auth?returnUrl=${encodeURIComponent(returnUrl)}`}>
           <a className={styles.card}>Authorize &rarr;</a>
         </Link>
       </main>

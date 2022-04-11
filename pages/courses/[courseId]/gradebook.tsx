@@ -1,6 +1,9 @@
 import type { GetServerSideProps, NextPage } from "next";
 import { withSessionSsr } from "lib/withSession";
-import CanvasAPI from "lib/canvasApi";
+import CanvasAPI, {
+  getCanvasClient,
+  redirectUnauthenticated,
+} from "lib/canvasApi";
 import { CanvasApiError } from "@kth/canvas-api";
 import { useRouter } from "next/router";
 import { useQuery } from "react-query";
@@ -107,42 +110,23 @@ interface GradebookProps {
 const _getServerSideProps: GetServerSideProps<GradebookProps> = async (
   context
 ) => {
-  try {
-    if (context.req.session) {
-      const { accessToken } = context.req.session;
+  const canvas = await getCanvasClient(context);
 
-      if (accessToken) {
-        const canvas = new CanvasAPI(accessToken);
-        const assignments = await canvas
-          .getAssignments(context.query.courseId as string)
-          .toArray();
-
-        return {
-          props: {
-            assignments: assignments.map((a) => ({
-              id: a.id.toString(10),
-              name: a.name,
-              type: a.grading_type,
-            })),
-          },
-        };
-      }
-    }
-  } catch (err) {
-    if (err instanceof CanvasApiError) {
-      if (err.code !== 401) {
-        throw err;
-      }
-    } else {
-      console.error(err);
-      throw err;
-    }
+  if (!canvas) {
+    return redirectUnauthenticated(context);
   }
 
+  const assignments = await canvas
+    .getAssignments(context.query.courseId as string)
+    .toArray();
+
   return {
-    redirect: {
-      destination: `/unauthenticated?courseId=${context.query.courseId}`,
-      permanent: false,
+    props: {
+      assignments: assignments.map((a) => ({
+        id: a.id.toString(10),
+        name: a.name,
+        type: a.grading_type,
+      })),
     },
   };
 };
