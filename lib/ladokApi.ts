@@ -89,6 +89,21 @@ interface Kurstillfalle {
   }[];
 }
 
+interface KurstillfalleInAktivitetstillfalle {
+  Utbildningstillfalle: {
+    Uid: string;
+  }[];
+}
+
+interface Studieresultat {
+  Resultat: {
+    Student: {
+      Uid: string;
+    };
+    Uid: string;
+  }[];
+}
+
 export async function getAktivitetstillfalle(aktivitetstillfalleUID: string) {
   return getGotClient()
     .get<Aktivitetstillfalle>(
@@ -101,6 +116,35 @@ export async function getAktivitetstillfalle(aktivitetstillfalleUID: string) {
 export async function getModulesInKurstillfalle(kurstillfalleUID: string) {
   return getGotClient()
     .get<Kurstillfalle>(`resultat/kurstillfalle/${kurstillfalleUID}/moment`)
+    .then((response) => response.body)
+    .catch(minimalErrorHandler);
+}
+
+export async function getKurstillfalleInAktivitetstillfalle(
+  aktivitetstillfalleUID: string
+) {
+  return getGotClient()
+    .get<KurstillfalleInAktivitetstillfalle>(
+      `resultat/kurstillfalle/aktivitetstillfalle/skafinnasstudenter/${aktivitetstillfalleUID}`
+    )
+    .then((response) => response.body)
+    .catch(minimalErrorHandler);
+}
+
+export async function getStudentsInAktivitetstillfalle(
+  aktivitetstillfalleUID: string,
+  kurstillfalleUID: string[]
+) {
+  return getGotClient()
+    .put<Studieresultat>(
+      `resultat/studieresultat/rapportera/aktivitetstillfalle/${aktivitetstillfalleUID}/sok`,
+      {
+        json: {
+          Filtrering: ["OBEHANDLADE", "UTKAST"],
+          KurstillfallenUID: kurstillfalleUID,
+        },
+      }
+    )
     .then((response) => response.body)
     .catch(minimalErrorHandler);
 }
