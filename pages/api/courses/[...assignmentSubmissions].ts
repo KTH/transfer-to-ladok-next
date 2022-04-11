@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withSessionRoute } from "lib/withSession";
-import { getCanvasClient } from "lib/canvasApi";
+import { getCanvasClient, redirectUnauthenticated } from "lib/canvasApi";
 
 export default withSessionRoute(sectionsHandler);
 
@@ -20,9 +20,14 @@ function getPathParams(req: NextApiRequest) {
     return null;
   }
 
+  const page = parseInt(
+    typeof req.query.page === "string" ? req.query.page : ""
+  );
+
   return {
     courseId,
     assignmentId,
+    page: isNaN(page) ? 1 : page,
   };
 }
 
@@ -31,12 +36,29 @@ async function sectionsHandler(req: NextApiRequest, res: NextApiResponse) {
   const params = getPathParams(req);
 
   if (!params) {
-    return res.status(404).json({});
+    res.status(404).json({});
+    return;
   }
 
   const canvas = await getCanvasClient(req);
 
-  res.status(200).json({
-    message: "Hello",
-  });
+  if (!canvas) {
+    res.status(401).json({ message: "Unauthenticated" });
+    return;
+  }
+
+  const submissions = await canvas.getSubmissions(
+    params.courseId,
+    params.assignmentId,
+    params.page
+  );
+
+  res.status(200).json(
+    submissions.map((s) => ({
+      id: s.user.integration_id,
+      grade: s.grade,
+      submissionDate: s.submitted_at,
+    }))
+  );
+  return;
 }

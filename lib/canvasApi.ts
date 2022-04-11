@@ -61,11 +61,13 @@ export default class CanvasAPI {
     return this.client.listItems<Assignment>(`courses/${courseId}/assignments`);
   }
 
-  getSubmissions(courseId: string, assignmentId: string) {
-    return this.client.listItems<Submission>(
-      `courses/${courseId}/assignments/${assignmentId}/submissions`,
-      { include: "user" }
-    );
+  getSubmissions(courseId: string, assignmentId: string, page = 1) {
+    return this.client
+      .get<Submission[]>(
+        `courses/${courseId}/assignments/${assignmentId}/submissions`,
+        { include: "user", page, per_page: 10 }
+      )
+      .then((r) => r.body);
   }
 
   getFinalGrades(courseId: string) {
