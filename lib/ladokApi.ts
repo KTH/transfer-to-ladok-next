@@ -81,7 +81,7 @@ interface Kurstillfalle {
   UtbildningsinstansUID: string;
   IngaendeMoment: {
     UtbildningsinstansUID: string;
-    Utbidlningskod: string;
+    Utbildningskod: string;
     Benamning: {
       en: string;
       sv: string;
@@ -138,6 +138,24 @@ export async function getStudentsInAktivitetstillfalle(
   return getGotClient()
     .put<Studieresultat>(
       `resultat/studieresultat/rapportera/aktivitetstillfalle/${aktivitetstillfalleUID}/sok`,
+      {
+        json: {
+          Filtrering: ["OBEHANDLADE", "UTKAST"],
+          KurstillfallenUID: kurstillfalleUID,
+        },
+      }
+    )
+    .then((response) => response.body)
+    .catch(minimalErrorHandler);
+}
+
+export async function getStudentsInUtbilidningsinstans(
+  utbildningsinstansUID: string,
+  kurstillfalleUID: string[]
+) {
+  return getGotClient()
+    .put<Studieresultat>(
+      `resultat/studieresultat/rapportera/utbildningsinstans/${utbildningsinstansUID}/sok`,
       {
         json: {
           Filtrering: ["OBEHANDLADE", "UTKAST"],

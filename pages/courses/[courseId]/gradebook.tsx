@@ -4,59 +4,73 @@ import CanvasAPI from "lib/canvasApi";
 import { CanvasApiError } from "@kth/canvas-api";
 import { useRouter } from "next/router";
 import { useQuery } from "react-query";
-import { StudieResultat } from "pages/api/aktivitetstillfalle/[aktId]/students";
 import { useState } from "react";
+import { StudieResultat } from "pages/api/students";
 
 // Endpoint /courses/:courseId/gradebook
-// Query parameters. Must be one of them:
-// ?aktivitetstillfalle  - Ladok UID for aktivitetstillfalle
-// ?kurstillfalle        - Ladok UID for kurstillfalle
 
+/**
+ * This type formalizes the query parameters that can be passed to this
+ * endpoint
+ */
 type Params =
   | { type: "aktivitetstillfalle"; aktivitetstillfalle: string }
-  | { type: "kurstillfalle"; kurstillfalle: string };
+  | {
+      type: "utbildningsinstans";
+      utbildningsinstans: string;
+      kurstillfalle: string;
+    };
 
-/** Get the query parameters if correctly formated */
+/**
+ * Get the query parameters if correctly formated
+ */
 function useQueryParams(): Params {
   const router = useRouter();
   const aktivitetstillfalle = router.query.aktivitetstillfalle;
   const kurstillfalle = router.query.kurstillfalle;
+  const utbildningsinstans = router.query.utbildningsinstans;
 
-  // It should be one or the other but not both
-  if (aktivitetstillfalle && kurstillfalle) {
-    throw new Error(
-      `Given both query parameters [aktivitetstillfalle=${aktivitetstillfalle}] and [kurstillfalle=${kurstillfalle}]. Only one should be provided`
-    );
-  }
-
-  if (aktivitetstillfalle) {
-    if (typeof aktivitetstillfalle === "string") {
-      return { type: "aktivitetstillfalle", aktivitetstillfalle };
-    } else {
-      throw new Error(
-        `Query parameter [aktivitetstillfalle] should be a string. Given type [${typeof aktivitetstillfalle}]`
-      );
-    }
-  } else if (kurstillfalle) {
-    if (typeof kurstillfalle === "string") {
-      return { type: "kurstillfalle", kurstillfalle };
-    } else {
-      throw new Error(
-        `Query parameter [kurstillfalle] should be a string. Given type [${typeof kurstillfalle}]`
-      );
-    }
+  if (typeof aktivitetstillfalle === "string") {
+    return {
+      type: "aktivitetstillfalle",
+      aktivitetstillfalle,
+    };
+  } else if (
+    typeof kurstillfalle === "string" &&
+    typeof utbildningsinstans === "string"
+  ) {
+    return {
+      type: "utbildningsinstans",
+      utbildningsinstans,
+      kurstillfalle,
+    };
   }
 
   throw new Error(
-    `Require either [aktivitetstillfalle] or [kurstillfalle] query parameters`
+    `This endpoint require either [aktivitetstillfalle] or [kurstillfalle]+[utbildningsinstans] as query parameters`
   );
 }
 
 async function fetchStudentsByAktivitetstillfalle(
-  aktivitetstillfalleUID: string
+  aktivitetstillfalle: string
 ): Promise<StudieResultat[]> {
   const response = await fetch(
-    `/transfer-to-ladok/api/aktivitetstillfalle/${aktivitetstillfalleUID}/students`
+    `/transfer-to-ladok/api/students?aktivitetstillfalle=${aktivitetstillfalle}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Network response was not ok");
+  }
+
+  return response.json();
+}
+
+async function fetchStudentsByUtbildningsinstans(
+  utbildningsinstans: string,
+  kurstillfalle: string
+): Promise<StudieResultat[]> {
+  const response = await fetch(
+    `/transfer-to-ladok/api/students?utbildningsinstans=${utbildningsinstans}&kurstillfalle=${kurstillfalle}`
   );
 
   if (!response.ok) {
@@ -72,10 +86,16 @@ function useStudents(params: Params) {
       return fetchStudentsByAktivitetstillfalle(params.aktivitetstillfalle);
     }
 
+    if (params.type === "utbildningsinstans") {
+      return fetchStudentsByUtbildningsinstans(
+        params.utbildningsinstans,
+        params.kurstillfalle
+      );
+    }
+
     throw new Error("[params.type] should be aktivitetstillfalle");
   });
 }
-
 interface GradebookProps {
   assignments: {
     id: string;
@@ -138,10 +158,13 @@ const Gradebook: NextPage<GradebookProps> = ({ assignments }) => {
     <div>
       <header>
         <h2>Choose an assignment</h2>
-        <select onChange={(e) => setAssignmentId(e.target.value)}>
+        <select
+          onChange={(e) => setAssignmentId(e.target.value)}
+          value={assignmentId}
+        >
           <option value={0}>Select</option>
           {assignments.map((a) => (
-            <option key={a.id} value={a.id} selected={assignmentId === a.id}>
+            <option key={a.id} value={a.id}>
               {a.name} {a.type}
             </option>
           ))}

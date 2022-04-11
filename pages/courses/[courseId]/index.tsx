@@ -18,6 +18,7 @@ interface HomeProps {
   }[];
   kurstillfalle: {
     id: string;
+    utbildningsinstansId: string;
     name: string;
     modules: {
       id: string;
@@ -43,7 +44,7 @@ function getUniqueAktivitetstillfalle(sections: Section[]) {
 }
 
 function isKurstillfalle(section: Section) {
-  const KURSTILLFALLE_REGEX = /^\w{6,7}[HT|VT]\d\d$/;
+  const KURSTILLFALLE_REGEX = /^\w{6,7}[HT|VT]\d\d\d$/;
 
   return KURSTILLFALLE_REGEX.test(section.sis_section_id);
 }
@@ -68,11 +69,12 @@ async function completeKurstillfalleInformation(section: Section) {
   const ktf = await getModulesInKurstillfalle(section.integration_id);
 
   return {
-    id: ktf.UtbildningsinstansUID,
+    id: section.integration_id,
+    utbildningsinstansId: ktf.UtbildningsinstansUID,
     name: section.sis_section_id,
     modules: ktf.IngaendeMoment.map((m) => ({
       id: m.UtbildningsinstansUID,
-      examCode: m.Utbidlningskod,
+      examCode: m.Utbildningskod,
       name: m.Benamning.en,
     })),
   };
@@ -172,9 +174,22 @@ const Home: NextPage<HomeProps> = ({ aktivitetstillfalle, kurstillfalle }) => {
                   <ul>
                     {ktf.modules.map((m) => (
                       <li key={m.id}>
-                        {m.examCode} {m.name}
+                        <Link
+                          href={`/courses/${courseId}/gradebook?kurstillfalle=${ktf.id}&utbildningsinstans=${m.id}`}
+                        >
+                          <a>
+                            {m.examCode} {m.name}
+                          </a>
+                        </Link>
                       </li>
                     ))}
+                    <li>
+                      <Link
+                        href={`/courses/${courseId}/gradebook?kurstillfalle=${ktf.id}&utbildningsinstans=${ktf.utbildningsinstansId}`}
+                      >
+                        <a>Final Grade</a>
+                      </Link>
+                    </li>
                   </ul>
                 </div>
               ))}
