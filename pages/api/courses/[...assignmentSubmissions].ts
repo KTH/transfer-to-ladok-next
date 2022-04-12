@@ -4,6 +4,12 @@ import { getCanvasClient, redirectUnauthenticated } from "lib/canvasApi";
 
 export default withSessionRoute(sectionsHandler);
 
+export interface CanvasGrade {
+  id: string;
+  grade: string;
+  submissionDate: string;
+}
+
 function getPathParams(req: NextApiRequest) {
   const [courseId, w1, assignmentId, w2] = req.query
     .assignmentSubmissions as string[];

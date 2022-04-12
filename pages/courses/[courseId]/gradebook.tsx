@@ -4,11 +4,14 @@ import CanvasAPI, {
   getCanvasClient,
   redirectUnauthenticated,
 } from "lib/canvasApi";
-import { CanvasApiError } from "@kth/canvas-api";
 import { useRouter } from "next/router";
 import { useQuery } from "react-query";
 import { useState } from "react";
-import { StudieResultat } from "pages/api/students";
+import {
+  fetchCanvasGrades,
+  fetchStudentsByAktivitetstillfalle,
+  fetchStudentsByUtbildningsinstans,
+} from "lib/apiClient";
 
 // Endpoint /courses/:courseId/gradebook
 
@@ -17,11 +20,16 @@ import { StudieResultat } from "pages/api/students";
  * endpoint
  */
 type Params =
-  | { type: "aktivitetstillfalle"; aktivitetstillfalle: string }
+  | {
+      type: "aktivitetstillfalle";
+      aktivitetstillfalle: string;
+      courseId: string;
+    }
   | {
       type: "utbildningsinstans";
       utbildningsinstans: string;
       kurstillfalle: string;
+      courseId: string;
     };
 
 /**
@@ -29,16 +37,19 @@ type Params =
  */
 function useQueryParams(): Params {
   const router = useRouter();
+  const courseId = router.query.courseId;
   const aktivitetstillfalle = router.query.aktivitetstillfalle;
   const kurstillfalle = router.query.kurstillfalle;
   const utbildningsinstans = router.query.utbildningsinstans;
 
-  if (typeof aktivitetstillfalle === "string") {
+  if (typeof courseId === "string" && typeof aktivitetstillfalle === "string") {
     return {
       type: "aktivitetstillfalle",
       aktivitetstillfalle,
+      courseId,
     };
   } else if (
+    typeof courseId === "string" &&
     typeof kurstillfalle === "string" &&
     typeof utbildningsinstans === "string"
   ) {
@@ -46,41 +57,13 @@ function useQueryParams(): Params {
       type: "utbildningsinstans",
       utbildningsinstans,
       kurstillfalle,
+      courseId,
     };
   }
 
   throw new Error(
     `This endpoint require either [aktivitetstillfalle] or [kurstillfalle]+[utbildningsinstans] as query parameters`
   );
-}
-
-async function fetchStudentsByAktivitetstillfalle(
-  aktivitetstillfalle: string
-): Promise<StudieResultat[]> {
-  const response = await fetch(
-    `/transfer-to-ladok/api/students?aktivitetstillfalle=${aktivitetstillfalle}`
-  );
-
-  if (!response.ok) {
-    throw new Error("Network response was not ok");
-  }
-
-  return response.json();
-}
-
-async function fetchStudentsByUtbildningsinstans(
-  utbildningsinstans: string,
-  kurstillfalle: string
-): Promise<StudieResultat[]> {
-  const response = await fetch(
-    `/transfer-to-ladok/api/students?utbildningsinstans=${utbildningsinstans}&kurstillfalle=${kurstillfalle}`
-  );
-
-  if (!response.ok) {
-    throw new Error("Network response was not ok");
-  }
-
-  return response.json();
 }
 
 function useStudents(params: Params) {
@@ -97,6 +80,15 @@ function useStudents(params: Params) {
     }
 
     throw new Error("[params.type] should be aktivitetstillfalle");
+  });
+}
+
+function useGrades(courseId: string, assignmentId: string) {
+  return useQuery([courseId, assignmentId, "submissions"], () => {
+    if (assignmentId === "0") {
+      return null;
+    }
+    return fetchCanvasGrades(courseId, assignmentId);
   });
 }
 
@@ -138,6 +130,7 @@ const Gradebook: NextPage<GradebookProps> = ({ assignments }) => {
   const params = useQueryParams();
   const studentsQuery = useStudents(params);
   const [assignmentId, setAssignmentId] = useState("0");
+  const gradesQuery = useGrades(params.courseId, assignmentId);
 
   return (
     <div>
@@ -158,6 +151,7 @@ const Gradebook: NextPage<GradebookProps> = ({ assignments }) => {
       </header>
       <main>Here you can see students!</main>
       {studentsQuery.isFetched ? "Available!" : "Loading!"}
+      {gradesQuery.isFetched ? "Available!" : "Loading"}
     </div>
   );
 };
