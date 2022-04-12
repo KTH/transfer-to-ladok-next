@@ -5,46 +5,37 @@
 import type { StudieResultat } from "pages/api/students";
 import type { CanvasGrade } from "pages/api/courses/[...assignmentSubmissions]";
 
-export async function fetchStudentsByAktivitetstillfalle(
-  aktivitetstillfalle: string
-): Promise<StudieResultat[]> {
-  const response = await fetch(
-    `/transfer-to-ladok/api/students?aktivitetstillfalle=${aktivitetstillfalle}`
-  );
+async function fetchApi(endpoint: string) {
+  const response = await fetch(`/transfer-to-ladok/api/${endpoint}`);
 
   if (!response.ok) {
-    throw new Error("Network response was not ok");
+    // TODO. Better error handling
+    throw new Error("Network response was not OK");
   }
 
   return response.json();
+}
+
+export async function fetchStudentsByAktivitetstillfalle(
+  aktivitetstillfalle: string
+): Promise<StudieResultat[]> {
+  return fetchApi(`students?aktivitetstillfalle=${aktivitetstillfalle}`);
 }
 
 export async function fetchStudentsByUtbildningsinstans(
   utbildningsinstans: string,
   kurstillfalle: string
 ): Promise<StudieResultat[]> {
-  const response = await fetch(
-    `/transfer-to-ladok/api/students?utbildningsinstans=${utbildningsinstans}&kurstillfalle=${kurstillfalle}`
+  return fetchApi(
+    `students?utbildningsinstans=${utbildningsinstans}&kurstillfalle=${kurstillfalle}`
   );
-
-  if (!response.ok) {
-    throw new Error("Network response was not ok");
-  }
-
-  return response.json();
 }
 
 export async function fetchCanvasGrades(
   courseId: string,
   assignmentId: string
 ): Promise<CanvasGrade[]> {
-  const response = await fetch(
-    `/transfer-to-ladok/api/courses/${courseId}/assignments/${assignmentId}/submissions`
+  return fetchApi(
+    `courses/${courseId}/assignments/${assignmentId}/submissions`
   );
-
-  if (!response.ok) {
-    throw new Error("");
-  }
-
-  return response.json();
 }
