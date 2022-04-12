@@ -3,7 +3,7 @@
  * the backend side of the app
  */
 import type { StudieResultat } from "pages/api/students";
-import type { CanvasGrade } from "pages/api/courses/[...assignmentSubmissions]";
+import type { Submissions } from "pages/api/courses/[...assignmentSubmissions]";
 
 async function fetchApi(endpoint: string) {
   const response = await fetch(`/transfer-to-ladok/api/${endpoint}`);
@@ -33,9 +33,10 @@ export async function fetchStudentsByUtbildningsinstans(
 
 export async function fetchCanvasGrades(
   courseId: string,
-  assignmentId: string
-): Promise<CanvasGrade[]> {
+  assignmentId: string,
+  page: number
+): Promise<Submissions> {
   return fetchApi(
-    `courses/${courseId}/assignments/${assignmentId}/submissions`
+    `courses/${courseId}/assignments/${assignmentId}/submissions?page=${page}`
   );
 }

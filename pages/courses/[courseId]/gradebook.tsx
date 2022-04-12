@@ -5,8 +5,8 @@ import CanvasAPI, {
   redirectUnauthenticated,
 } from "lib/canvasApi";
 import { useRouter } from "next/router";
-import { useQuery } from "react-query";
-import { useState } from "react";
+import { useInfiniteQuery, useQuery } from "react-query";
+import { useEffect, useState } from "react";
 import {
   fetchCanvasGrades,
   fetchStudentsByAktivitetstillfalle,
@@ -84,12 +84,43 @@ function useStudents(params: Params) {
 }
 
 function useGrades(courseId: string, assignmentId: string) {
-  return useQuery([courseId, assignmentId, "submissions"], () => {
-    if (assignmentId === "0") {
-      return null;
+  const result = useInfiniteQuery(
+    [courseId, assignmentId, "submissions"],
+    ({ pageParam = 0 }) => {
+      if (assignmentId === "0") {
+        return null;
+      }
+      return fetchCanvasGrades(courseId, assignmentId, pageParam);
+    },
+    {
+      getNextPageParam: (lastPage, allPages) => {
+        if (!lastPage) {
+          return undefined;
+        }
+
+        const currentLength = allPages.reduce(
+          (acc, curr) => acc + (curr?.submissions.length ?? 0),
+          0
+        );
+
+        if (currentLength >= lastPage.summary.total) {
+          return undefined;
+        }
+
+        return allPages.length + 1;
+      },
     }
-    return fetchCanvasGrades(courseId, assignmentId);
-  });
+  );
+
+  const { hasNextPage, isFetching, fetchNextPage } = result;
+
+  useEffect(() => {
+    if (!isFetching && hasNextPage) {
+      fetchNextPage();
+    }
+  }, [isFetching, hasNextPage, fetchNextPage]);
+
+  return result;
 }
 
 interface GradebookProps {
@@ -151,7 +182,12 @@ const Gradebook: NextPage<GradebookProps> = ({ assignments }) => {
       </header>
       <main>Here you can see students!</main>
       {studentsQuery.isFetched ? "Available!" : "Loading!"}
-      {gradesQuery.isFetched ? "Available!" : "Loading"}
+      {gradesQuery.isFetched && !gradesQuery.hasNextPage
+        ? "Available!"
+        : "Loading"}
+      {gradesQuery.data?.pages.flatMap((p) => p?.submissions).length}
+      {" out of "}
+      {gradesQuery.data?.pages[0]?.summary.total}
     </div>
   );
 };

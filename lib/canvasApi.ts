@@ -18,6 +18,12 @@ export interface Assignment {
   lock_at: string | null;
 }
 
+export interface SubmissionSummary {
+  graded: number;
+  ungraded: number;
+  not_submitted: number;
+}
+
 export interface Submission {
   id: number;
   grade: string | null;
@@ -59,6 +65,14 @@ export default class CanvasAPI {
 
   getAssignments(courseId: string) {
     return this.client.listItems<Assignment>(`courses/${courseId}/assignments`);
+  }
+
+  getSubmissionsSummary(courseId: string, assignmentId: string) {
+    return this.client
+      .get<SubmissionSummary>(
+        `courses/${courseId}/assignments/${assignmentId}/submission_summary`
+      )
+      .then((r) => r.body);
   }
 
   getSubmissions(courseId: string, assignmentId: string, page = 1) {
